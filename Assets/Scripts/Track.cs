@@ -60,7 +60,7 @@ namespace Beats
 
             //Preroll
             for (int i = 0; i < _preroll; i++)
-                beats.Add(-1);
+                beats.Add((int)Beat.EMPTY);
 
             //Blocks
             for (int block = 0; block < _blocks; block++)
@@ -80,7 +80,7 @@ namespace Beats
                 //Interval
                 int intervalLength = Random.Range(_minInterval, _maxInterval + 1);
                 for (int j = 0; j < intervalLength; j++)
-                    beats.Add(-1);
+                    beats.Add((int)Beat.EMPTY);
             }
 
 
