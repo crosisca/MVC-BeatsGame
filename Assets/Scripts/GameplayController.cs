@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections;
 
 namespace Beats
 {
@@ -39,23 +40,48 @@ namespace Beats
         /// </summary>
         public Track track => _track;
 
-        public float secondsPerBeat { get; private set; }
         public float beatsPerSecond { get; private set; }
+        public float secondsPerBeat { get; private set; }
 
         bool _played;
         bool _completed;
 
-        #region Monobehaviour Methods
+        TrackView _trackView;
 
+        WaitForSeconds waitAndStop;
+
+        static GameplayController _instance;
+
+        public static GameplayController Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = FindObjectOfType<GameplayController>();
+
+                return _instance;
+            }
+            set { _instance = value; }
+        }
+
+        #region Monobehaviour Methods
         void Awake()
         {
-            secondsPerBeat = track.bpm / 60f;
-            beatsPerSecond = 60f / track.bpm;
+            _instance = this;
+
+            beatsPerSecond = track.bpm / 60f;
+            secondsPerBeat = 60f / track.bpm;
+
+            waitAndStop = new WaitForSeconds(secondsPerBeat * 2);//wait for 2 beats
+
+            _trackView = FindObjectOfType<TrackView>();
+            if(!_trackView)
+                Debug.LogWarning("No TrackView found in current scene");
         }
 
         void Start ()
         {
-            InvokeRepeating("NextBeat", 0f, beatsPerSecond);
+            InvokeRepeating("NextBeat", 0f, secondsPerBeat);
         }
 
         void Update ()
@@ -72,7 +98,12 @@ namespace Beats
             if (Input.GetKeyDown(_down))
                 PlayBeat(Beat.DOWN);
         }
-        
+
+        void OnDestroy()
+        {
+            _instance = null;
+        }
+
         #endregion
 
 
@@ -89,7 +120,10 @@ namespace Beats
                 if (_current == track.beats.Count)
                 {
                     CancelInvoke("NextBeat");
+
                     _completed = true;
+
+                    StartCoroutine(WaitAndStop());
                 }
             }
         }
@@ -101,24 +135,26 @@ namespace Beats
 
         void PlayBeat(int input)
         {
-            Debug.Log((Beat)input);
+            _played = true;
 
+            //Played when not suposed to
             if (_track.beats[current] == -1)
             {
-                //Played when not suposed to
-                Debug.Log($"{input} played untimely");
+                //Debug.Log($"{input} played untimely");
+                //TODO Create some feedback for untimely
             }
+            //Correct beat played
             else if (_track.beats[current] == input)
             {
-                //Correct beat played
-                Debug.Log($"{_track.beats[current]} played right");
+                //Debug.Log($"{_track.beats[current]} played right");
+                _trackView.TriggerBeatView(current, TrackView.Trigger.Right);
             }
+            //Wrong beat played
             else
             {
-                //Wrong beat played
-                Debug.Log($"{input} played, {_track.beats[current]} expected");
+                //Debug.Log($"{input} played, {_track.beats[current]} expected");
+                _trackView.TriggerBeatView(current, TrackView.Trigger.Wrong);
             }
-            _played = true;
         }
 
         void NextBeat()
@@ -126,11 +162,21 @@ namespace Beats
             //Debug.Log("Tick");
 
             if (!_played && _track.beats[current] != -1)
-                Debug.Log($"{_track.beats[current]} missed");
+            {
+                //Debug.Log($"{_track.beats[current]} missed");
+                _trackView.TriggerBeatView(current, TrackView.Trigger.Missed);
+            }
 
             current++;
 
             _played = false;
+        }
+
+        IEnumerator WaitAndStop()
+        {
+            yield return waitAndStop;
+
+            enabled = false;
         }
         
 

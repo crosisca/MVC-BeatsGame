@@ -20,10 +20,7 @@ namespace Beats
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-
-            if (track.beats == null)
-                return;
-
+            
             if (track.beats.Count == 0)
             {
                 EditorGUILayout.HelpBox("Empty Track", MessageType.Info);

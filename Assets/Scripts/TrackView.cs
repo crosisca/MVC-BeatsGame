@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Beats
@@ -8,8 +10,13 @@ namespace Beats
     [RequireComponent(typeof(RectTransform))]
     public class TrackView : MonoBehaviour
     {
-        [SerializeField]
-        Track _track;
+        public enum Trigger
+        {
+            Missed,
+            Right,
+            Wrong
+        }
+
 
         [SerializeField]
         RectTransform _left;
@@ -27,6 +34,7 @@ namespace Beats
         RectTransform _empty;
 
         RectTransform _rectTransform;
+        List<Image> _beatViews;
 
         Vector2 _position;
         public float position
@@ -41,12 +49,19 @@ namespace Beats
                 }
             }
         }
-
+        
+        float _beatViewSize;
+        float _spacing;
 
         public void Init(Track track)
         {
             _rectTransform = (RectTransform) transform;
             _position = _rectTransform.anchoredPosition;
+
+            _beatViewSize = _empty.rect.height;
+            _spacing = GetComponent<VerticalLayoutGroup>().spacing;
+
+            _beatViews = new List<Image>();
 
             foreach (int beat in track.beats)
             {
@@ -70,20 +85,37 @@ namespace Beats
                             break;
                 }
 
-                Transform view = GameObject.Instantiate(go, transform).transform;
-                view.SetAsFirstSibling();
-            }
+                Image view = GameObject.Instantiate(go, transform).GetComponent<Image>();
+                view.transform.SetAsFirstSibling();
 
+                _beatViews.Add(view);
+            }
         }
 
         void Start()
         {
-            Init(_track);
+            Init(GameplayController.Instance.track);
         }
 
         void Update()
         {
-            position -= Time.deltaTime * 100;
+            position -= (_beatViewSize + _spacing) * Time.deltaTime * GameplayController.Instance.beatsPerSecond;
+        }
+
+        public void TriggerBeatView(int beatIndex, Trigger trigger)
+        {
+            switch (trigger)
+            {
+                case Trigger.Missed:
+                    _beatViews[beatIndex].color = Color.gray;
+                    break;
+                case Trigger.Right:
+                    _beatViews[beatIndex].color = Color.yellow;
+                    break;
+                case Trigger.Wrong:
+                    _beatViews[beatIndex].color = Color.cyan;
+                    break;
+            }
         }
     }
 }

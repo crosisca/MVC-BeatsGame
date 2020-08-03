@@ -17,7 +17,7 @@ namespace Beats
         public int bpm = 120;
 
         [HideInInspector]
-        public List<int> beats;
+        public List<int> beats = new List<int>();
 
         //Shouldn't have data generation method inside the model itself
         public static int inputs = 4;
